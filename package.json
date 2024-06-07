@@ -1,0 +1,21 @@
+{
+    "name": "rec-task",
+    "version": "1.0.0",
+    "description": "A Node.js script to find prime numbers between two given numbers with energy consumption limit.",
+    "main": "rec-task.js",
+    "scripts": {
+        "start": "npm install && node index.js"
+    },
+    "keywords": [
+        "prime",
+        "numbers",
+        "energy",
+        "consumption",
+        "performance"
+    ],
+    "author": "REC Foundation",
+    "license": "MIT",
+    "dependencies": {
+        "performance-now": "^2.1.0"
+    }
+}
