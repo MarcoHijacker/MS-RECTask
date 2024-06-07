@@ -1,4 +1,5 @@
-const now = require('performance-now');
+const { performance, PerformanceObserver } = require('perf_hooks');
+const os = require('os');
 
 // Function to check if a number is prime
 function isPrime(num) {
@@ -14,11 +15,37 @@ function isPrime(num) {
   return true;
 }
 
+// Function to get system information and calculate power consumption rate in mWh
+function getSystemPowerConsumptionRate() {
+  const cpus = os.cpus();
+  const cpuModel = cpus[0].model;
+  const numCores = cpus.length;
+  const cpuSpeedMHz = cpus[0].speed; // speed in MHz
+  const totalMemoryGB = os.totalmem() / (1024 ** 3); // total memory in GB
+
+  // Assuming a generic power consumption based on CPU speed, number of cores, and RAM
+  // These values can be adjusted based on more accurate benchmarks or specific hardware specs
+  const basePowerConsumptionW = 50; // base consumption in watts
+  const powerPerCoreW = 10; // additional power per core in watts
+  const powerPerGBRamW = 2; // additional power per GB of RAM in watts
+
+  const totalPowerConsumptionW = basePowerConsumptionW + (numCores * powerPerCoreW) + (totalMemoryGB * powerPerGBRamW);
+  const totalPowerConsumptionmWh = totalPowerConsumptionW * 1000; // converting to mWh
+
+  return {
+    cpuModel,
+    numCores,
+    cpuSpeedMHz,
+    totalMemoryGB,
+    totalPowerConsumptionmWh
+  };
+}
+
 // Function to find all prime numbers between a and b
-function findPrimesBetween(a = 0, b = 10000000, energyLimit) {
+function findPrimesBetween(a, b, energyLimit) {
   const primes = [];
-  const powerConsumptionW = 100; // Approximate power consumption in watts
-  const startTime = now();
+  const { totalPowerConsumptionmWh } = getSystemPowerConsumptionRate();
+  const startTime = performance.now();
 
   for (let i = a; i <= b; i++) {
     if (isPrime(i)) {
@@ -27,11 +54,10 @@ function findPrimesBetween(a = 0, b = 10000000, energyLimit) {
 
     // Periodically check energy consumption
     if (i % 100 === 0) { // Adjust the interval as needed for better performance
-      const currentTime = now();
+      const currentTime = performance.now();
       const executionTime = currentTime - startTime;
-      const executionTimeSeconds = executionTime / 1000;
-      const energyConsumptionWh = powerConsumptionW * (executionTimeSeconds / 3600);
-      const energyConsumptionmWh = energyConsumptionWh * 1000;
+      const executionTimeHours = executionTime / (1000 * 3600); // converting milliseconds to hours
+      const energyConsumptionmWh = totalPowerConsumptionmWh * executionTimeHours;
 
       if (energyConsumptionmWh > energyLimit) {
         console.log('Prime numbers found so far:', primes);
@@ -60,19 +86,25 @@ if (isNaN(a) || isNaN(b)) {
 }
 
 // Measure execution time
-const startTime = now();
+const startTime = performance.now();
 const primes = findPrimesBetween(a, b, energyLimit);
-const endTime = now();
+const endTime = performance.now();
 const executionTime = endTime - startTime;
+
+const { cpuModel, numCores, cpuSpeedMHz, totalMemoryGB, totalPowerConsumptionmWh } = getSystemPowerConsumptionRate();
+
+console.log(`CPU Model: ${cpuModel}`);
+console.log(`Number of CPU Cores: ${numCores}`);
+console.log(`CPU Speed (MHz): ${cpuSpeedMHz}`);
+console.log(`Total Memory (GB): ${totalMemoryGB}`);
+console.log(`Estimated Power Consumption Rate (mWh per hour): ${totalPowerConsumptionmWh}`);
 
 console.log(`Prime numbers between ${a} and ${b}:`, primes);
 console.log('Total execution time (ms):', executionTime.toFixed(3));
 
 // Final energy consumption estimate
-const powerConsumptionW = 100; // Approximate power consumption in watts
-const executionTimeSeconds = executionTime / 1000;
-const energyConsumptionWh = powerConsumptionW * (executionTimeSeconds / 3600);
-const energyConsumptionmWh = energyConsumptionWh * 1000;
+const executionTimeHours = executionTime / (1000 * 3600); // converting milliseconds to hours
+const energyConsumptionmWh = totalPowerConsumptionmWh * executionTimeHours;
 
 console.log('Estimated energy consumption (mWh):', energyConsumptionmWh.toFixed(3));
 console.log('Energy limit quota (mWh):', energyLimit);
