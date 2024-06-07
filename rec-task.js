@@ -15,7 +15,7 @@ function isPrime(num) {
 }
 
 // Function to find all prime numbers between a and b
-function findPrimesBetween(a, b, energyLimit) {
+function findPrimesBetween(a = 0, b = 10000000, energyLimit) {
   const primes = [];
   const powerConsumptionW = 100; // Approximate power consumption in watts
   const startTime = now();
