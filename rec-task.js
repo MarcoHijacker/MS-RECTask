@@ -1,5 +1,50 @@
 const { performance, PerformanceObserver } = require('perf_hooks');
 const os = require('os');
+const crypto = require('crypto');
+const fs = require('fs');
+const http = require('http');
+
+// Global variables
+const task_id = "<TASK_ID>";
+const jwt = "<JWT>";
+const energyLimit = "<ENERGY_LIMIT>";
+
+// Function to calculate the hash of the current script file
+function calculateScriptHash() {
+  const scriptContent = fs.readFileSync(__filename);
+  return crypto.createHash('sha256').update(scriptContent).digest('hex');
+}
+
+// Function to make an HTTP request
+function httpRequest(method, url, data, callback) {
+  const options = {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${jwt}`
+    }
+  };
+
+  const req = http.request(url, options, (res) => {
+    let body = '';
+    res.on('data', chunk => {
+      body += chunk;
+    });
+    res.on('end', () => {
+      callback(null, res, body);
+    });
+  });
+
+  req.on('error', (e) => {
+    callback(e);
+  });
+
+  if (data) {
+    req.write(JSON.stringify(data));
+  }
+
+  req.end();
+}
 
 // Function to check if a number is prime
 function isPrime(num) {
@@ -42,7 +87,7 @@ function getSystemPowerConsumptionRate() {
 }
 
 // Function to find all prime numbers between a and b
-function findPrimesBetween(a, b, energyLimit) {
+function findPrimesBetween(a = 0, b = 100000000, energyLimit) {
   const primes = [];
   const { totalPowerConsumptionmWh } = getSystemPowerConsumptionRate();
   const startTime = performance.now();
@@ -66,7 +111,12 @@ function findPrimesBetween(a, b, energyLimit) {
         console.log('Energy limit quota (mWh):', energyLimit);
         console.log('Delta between limit quota and consumed energy (mWh):', (energyLimit - energyConsumptionmWh).toFixed(3));
         console.log('Program terminated due to exceeded mWh limit quota.');
-        process.exit(1);
+
+        httpRequest('PATCH', `http://localhost:8086/api/task/executed/${task_id}`, { status: 3 }, () => {
+          process.exit(1);
+        });
+
+        return primes; // Early return on energy limit exceedance
       }
     }
   }
@@ -74,38 +124,70 @@ function findPrimesBetween(a, b, energyLimit) {
   return primes;
 }
 
-// Read command line arguments for a and b
-const [,, argA, argB, argLimit] = process.argv;
-const a = parseInt(argA, 10);
-const b = parseInt(argB, 10);
-const energyLimit = parseInt(argLimit, 10) || 10000; // Default to 10000 mWh if not provided
+// Main execution logic
+const scriptHash = calculateScriptHash();
 
-if (isNaN(a) || isNaN(b)) {
-  console.error('Please provide valid numbers for a and b.');
-  process.exit(1);
-}
+httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res, body) => {
+  if (err) {
+    console.error('Error making API call:', err);
+    process.exit(1);
+  }
 
-// Measure execution time
-const startTime = performance.now();
-const primes = findPrimesBetween(a, b, energyLimit);
-const endTime = performance.now();
-const executionTime = endTime - startTime;
+  const response = JSON.parse(body);
+  if (response.hash !== scriptHash) {
+    console.error('Hash mismatch. Terminating program.');
 
-const { cpuModel, numCores, cpuSpeedMHz, totalMemoryGB, totalPowerConsumptionmWh } = getSystemPowerConsumptionRate();
+    httpRequest('PATCH', `http://localhost:8086/api/task/executed/${task_id}`, { status: 4 }, () => {
+      process.exit(1);
+    });
+  } else {
+    httpRequest('PATCH', `http://localhost:8086/api/task/executed/${task_id}`, { status: 1 }, (err) => {
+      if (err) {
+        console.error('Error making API call:', err);
+        process.exit(1);
+      }
 
-console.log(`CPU Model: ${cpuModel}`);
-console.log(`Number of CPU Cores: ${numCores}`);
-console.log(`CPU Speed (MHz): ${cpuSpeedMHz}`);
-console.log(`Total Memory (GB): ${totalMemoryGB}`);
-console.log(`Estimated Power Consumption Rate (mWh per hour): ${totalPowerConsumptionmWh}`);
+      // Read command line arguments for a and b
+      const [,, argA, argB] = process.argv;
+      const a = parseInt(argA, 10) || 0;
+      const b = parseInt(argB, 10) || 100000000;
 
-console.log(`Prime numbers between ${a} and ${b}:`, primes);
-console.log('Total execution time (ms):', executionTime.toFixed(3));
+      if (isNaN(a) || isNaN(b)) {
+        console.error('Please provide valid numbers for a and b.');
+        process.exit(1);
+      }
 
-// Final energy consumption estimate
-const executionTimeHours = executionTime / (1000 * 3600); // converting milliseconds to hours
-const energyConsumptionmWh = totalPowerConsumptionmWh * executionTimeHours;
+      // Measure execution time
+      const startTime = performance.now();
+      const primes = findPrimesBetween(a, b, energyLimit);
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
 
-console.log('Estimated energy consumption (mWh):', energyConsumptionmWh.toFixed(3));
-console.log('Energy limit quota (mWh):', energyLimit);
-console.log('Delta between limit quota and consumed energy (mWh):', (energyLimit - energyConsumptionmWh).toFixed(3));
+      const { cpuModel, numCores, cpuSpeedMHz, totalMemoryGB, totalPowerConsumptionmWh } = getSystemPowerConsumptionRate();
+
+      console.log(`CPU Model: ${cpuModel}`);
+      console.log(`Number of CPU Cores: ${numCores}`);
+      console.log(`CPU Speed (MHz): ${cpuSpeedMHz}`);
+      console.log(`Total Memory (GB): ${totalMemoryGB}`);
+      console.log(`Estimated Power Consumption Rate (mWh per hour): ${totalPowerConsumptionmWh}`);
+
+      console.log(`Prime numbers between ${a} and ${b}:`, primes);
+      console.log('Total execution time (ms):', executionTime.toFixed(3));
+
+      // Final energy consumption estimate
+      const executionTimeHours = executionTime / (1000 * 3600); // converting milliseconds to hours
+      const energyConsumptionmWh = totalPowerConsumptionmWh * executionTimeHours;
+
+      console.log('Estimated energy consumption (mWh):', energyConsumptionmWh.toFixed(3));
+      console.log('Energy limit quota (mWh):', energyLimit);
+      console.log('Delta between limit quota and consumed energy (mWh):', (energyLimit - energyConsumptionmWh).toFixed(3));
+
+      // Determine final status based on energy consumption
+      const finalStatus = energyConsumptionmWh > energyLimit ? 3 : 2;
+
+      httpRequest('PATCH', `http://localhost:8086/api/task/executed/${task_id}`, { status: finalStatus }, () => {
+        process.exit(finalStatus === 3 ? 1 : 0);
+      });
+    });
+  }
+});
