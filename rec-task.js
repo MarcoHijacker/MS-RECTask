@@ -150,7 +150,7 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
       // Read command line arguments for a and b
       const [,, argA, argB] = process.argv;
       const a = parseInt(argA, 10) || 0;
-      const b = parseInt(argB, 10) || 1000000000;
+      const b = parseInt(argB, 10) || 200000000;
 
       if (isNaN(a) || isNaN(b)) {
         console.error('Please provide valid numbers for a and b.');
