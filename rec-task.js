@@ -112,7 +112,7 @@ function findPrimesBetween(a = 0, b = 1000000000, energyLimit) {
         console.log('Delta between limit quota and consumed energy (mWh):', (energyLimit - energyConsumptionmWh).toFixed(3));
         console.log('Program terminated due to exceeded mWh limit quota.');
 
-        httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: 3, hash: scriptHash }, () => {
+        httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { "status": 3, "hash": scriptHash }, () => {
           process.exit(1);
         });
 
@@ -137,11 +137,11 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
   if (response.hash !== scriptHash) {
     console.error('Hash mismatch. Terminating program.');
 
-    httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: 4, hash: scriptHash }, () => {
+    httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { "status": 4, "hash": scriptHash }, () => {
       process.exit(1);
     });
   } else {
-    httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: 1, hash: scriptHash }, (err) => {
+    httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { "status": 1, "hash": scriptHash }, (err) => {
       if (err) {
         console.error('Error making API call:', err);
         process.exit(1);
@@ -185,7 +185,7 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
       // Determine final status based on energy consumption
       const finalStatus = energyConsumptionmWh > energyLimit ? 3 : 2;
 
-      httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: finalStatus, hash: scriptHash, executionTime: executionTimeHours, energyConsumed: energyConsumptionmWh.toFixed(3) }, () => {
+      httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { "status": finalStatus, "hash": scriptHash, "executionTime": executionTimeHours, "energyConsumed": energyConsumptionmWh.toFixed(3) }, () => {
         process.exit(finalStatus === 3 ? 1 : 0);
       });
     });
