@@ -240,17 +240,20 @@ httpRequest(
                     const finalStatus =
                         energyConsumptionmWh > energyLimit ? 3 : 2;
 
+                    const payload = {
+                        status: finalStatus,
+                        executionTime: executionTimeHours,
+                        energyConsumed: energyConsumptionmWh.toFixed(3),
+                        hash: scriptHash,
+                    };
+
                     httpRequest(
                         "PATCH",
                         `http://localhost:8086/api/task/execution/${task_id}`,
-                        {
-                            status: finalStatus,
-                            executionTime: executionTimeHours,
-                            energyConsumed: energyConsumptionmWh.toFixed(3),
-                            hash: scriptHash,
-                        },
+                        payload,
                         (err) => {
                             if (err) {
+                                console.log(payload);
                                 console.error(
                                     "Error making final API call:",
                                     err
