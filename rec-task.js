@@ -241,7 +241,7 @@ httpRequest(
                         energyConsumptionmWh > energyLimit ? 3 : 2;
 
                     const payload = {
-                        status: finalStatus,
+                        status: parseInt(finalStatus),
                         executionTime: parseFloat(executionTimeHours.toFixed(2)),
                         energyConsumed: parseFloat(energyConsumptionmWh.toFixed(2)),
                         hash: scriptHash,
