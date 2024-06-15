@@ -164,9 +164,9 @@ axiosInstance.get(`http://localhost:8086/api/task/${task_id}`)
           const finalStatus = energyConsumptionmWh > energyLimit ? 3 : 2;
 
           const payload = {
-            status: finalStatus,
-            executionTime: executionTimeHours,
-            energyConsumed: energyConsumptionmWh.toFixed(3),
+            status: parseInt(finalStatus),
+            executionTime: parseInt(executionTimeHours),
+            energyConsumed: parseInt(energyConsumptionmWh),
             hash: scriptHash,
           };
 
