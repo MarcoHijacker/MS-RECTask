@@ -8,6 +8,7 @@ const http = require('http');
 const task_id = "<TASK_ID>";
 const jwt = "<JWT>";
 const energyLimit = "<ENERGY_LIMIT>";
+const taskEffort = "<TASK_EFFORT>"; // Could be low, mid or high
 
 // Function to calculate the hash of the current script file
 function calculateScriptHash() {
@@ -150,7 +151,7 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
       // Read command line arguments for a and b
       const [,, argA, argB] = process.argv;
       const a = parseInt(argA, 10) || 0;
-      const b = parseInt(argB, 10) || 100000000;
+      const b = parseInt(argB, 10) || (taskEffort === "low" ? 100000000 : taskEffort === "mid" ? 200000000 : taskEffort === "high" ? 500000000 : 100000000);
 
       if (isNaN(a) || isNaN(b)) {
         console.error('Please provide valid numbers for a and b.');
