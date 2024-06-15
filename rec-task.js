@@ -242,8 +242,8 @@ httpRequest(
 
                     const payload = {
                         status: finalStatus,
-                        executionTime: executionTimeHours,
-                        energyConsumed: energyConsumptionmWh.toFixed(3),
+                        executionTime: executionTimeHours.toFixed(2),
+                        energyConsumed: parseFloat(energyConsumptionmWh).toFixed(2),
                         hash: scriptHash,
                     };
 
