@@ -16,14 +16,15 @@ function calculateScriptHash() {
   return crypto.createHash('sha256').update(scriptContent).digest('hex');
 }
 
-// Function to make an HTTP request
-function httpRequest(method, url, data, callback) {
+// Function to make an HTTP request with retry mechanism
+function httpRequest(method, url, data, callback, retries = 3) {
   const options = {
     method: method,
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${jwt}`
-    }
+    },
+    timeout: 5000 // 5 seconds timeout
   };
 
   const req = http.request(url, options, (res) => {
@@ -37,7 +38,22 @@ function httpRequest(method, url, data, callback) {
   });
 
   req.on('error', (e) => {
-    callback(e);
+    if (retries > 0) {
+      console.log(`Retrying... Attempts left: ${retries}`);
+      httpRequest(method, url, data, callback, retries - 1);
+    } else {
+      callback(e);
+    }
+  });
+
+  req.on('timeout', () => {
+    req.abort();
+    if (retries > 0) {
+      console.log(`Request timeout. Retrying... Attempts left: ${retries}`);
+      httpRequest(method, url, data, callback, retries - 1);
+    } else {
+      callback(new Error('Request timed out'));
+    }
   });
 
   if (data) {
