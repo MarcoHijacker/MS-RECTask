@@ -17,7 +17,7 @@ function calculateScriptHash() {
 }
 
 // Function to make an HTTP request with retry mechanism
-function httpRequest(method, url, data, callback, retries = 3) {
+function httpRequest(method, url, data, callback, retries = 3, delay = 1000) {
   const options = {
     method: method,
     headers: {
@@ -39,8 +39,10 @@ function httpRequest(method, url, data, callback, retries = 3) {
 
   req.on('error', (e) => {
     if (retries > 0) {
-      console.log(`Retrying... Attempts left: ${retries}`);
-      httpRequest(method, url, data, callback, retries - 1);
+      console.log(`Error occurred: ${e.message}. Retrying in ${delay} ms... Attempts left: ${retries}`);
+      setTimeout(() => {
+        httpRequest(method, url, data, callback, retries - 1, delay * 2);
+      }, delay);
     } else {
       callback(e);
     }
@@ -49,8 +51,10 @@ function httpRequest(method, url, data, callback, retries = 3) {
   req.on('timeout', () => {
     req.abort();
     if (retries > 0) {
-      console.log(`Request timeout. Retrying... Attempts left: ${retries}`);
-      httpRequest(method, url, data, callback, retries - 1);
+      console.log(`Request timeout. Retrying in ${delay} ms... Attempts left: ${retries}`);
+      setTimeout(() => {
+        httpRequest(method, url, data, callback, retries - 1, delay * 2);
+      }, delay);
     } else {
       callback(new Error('Request timed out'));
     }
