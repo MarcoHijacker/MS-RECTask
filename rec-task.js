@@ -186,7 +186,7 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
       // Determine final status based on energy consumption
       const finalStatus = energyConsumptionmWh > energyLimit ? 3 : 2;
 
-      httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: parseInt(finalStatus), hash: scriptHash, executionTime: parseFloat(executionTimeHours).toFixed(3), energyConsumed: parseFloat(energyConsumptionmWh).toFixed(3) }, () => {
+      httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: parseInt(finalStatus), hash: scriptHash, executionTime: parseFloat(executionTimeHours.toFixed(3)), energyConsumed: parseFloat(energyConsumptionmWh.toFixed(3)) }, () => {
         process.exit(finalStatus === 3 ? 1 : 0);
       });
     });
