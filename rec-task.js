@@ -39,7 +39,7 @@ function httpRequest(method, url, data, callback, retries = 3, delay = 1000) {
 
   req.on('error', (e) => {
     if (retries > 0) {
-      console.log(`Error occurred: ${e.message}. Retrying in ${delay} ms... Attempts left: ${retries}`);
+      // console.log(`Error occurred: ${e.message}. Retrying in ${delay} ms... Attempts left: ${retries}`);
       setTimeout(() => {
         httpRequest(method, url, data, callback, retries - 1, delay * 2);
       }, delay);
@@ -51,7 +51,7 @@ function httpRequest(method, url, data, callback, retries = 3, delay = 1000) {
   req.on('timeout', () => {
     req.abort();
     if (retries > 0) {
-      console.log(`Request timeout. Retrying in ${delay} ms... Attempts left: ${retries}`);
+      // console.log(`Request timeout. Retrying in ${delay} ms... Attempts left: ${retries}`);
       setTimeout(() => {
         httpRequest(method, url, data, callback, retries - 1, delay * 2);
       }, delay);
