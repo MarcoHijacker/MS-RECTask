@@ -39,7 +39,6 @@ function httpRequest(method, url, data, callback, retries = 3, delay = 1000) {
 
   req.on('error', (e) => {
     if (retries > 0) {
-      // console.log(`Error occurred: ${e.message}. Retrying in ${delay} ms... Attempts left: ${retries}`);
       setTimeout(() => {
         httpRequest(method, url, data, callback, retries - 1, delay * 2);
       }, delay);
@@ -51,7 +50,6 @@ function httpRequest(method, url, data, callback, retries = 3, delay = 1000) {
   req.on('timeout', () => {
     req.abort();
     if (retries > 0) {
-      // console.log(`Request timeout. Retrying in ${delay} ms... Attempts left: ${retries}`);
       setTimeout(() => {
         httpRequest(method, url, data, callback, retries - 1, delay * 2);
       }, delay);
@@ -89,8 +87,6 @@ function getSystemPowerConsumptionRate() {
   const cpuSpeedMHz = cpus[0].speed; // speed in MHz
   const totalMemoryGB = os.totalmem() / (1024 ** 3); // total memory in GB
 
-  // Assuming a generic power consumption based on CPU speed, number of cores, and RAM
-  // These values can be adjusted based on more accurate benchmarks or specific hardware specs
   const basePowerConsumptionW = 50; // base consumption in watts
   const powerPerCoreW = 10; // additional power per core in watts
   const powerPerGBRamW = 2; // additional power per GB of RAM in watts
@@ -118,8 +114,7 @@ function findPrimesBetween(a = 0, b = 1000000000, energyLimit) {
       primes.push(i);
     }
 
-    // Periodically check energy consumption
-    if (i % 100 === 0) { // Adjust the interval as needed for better performance
+    if (i % 100 === 0) {
       const currentTime = performance.now();
       const executionTime = currentTime - startTime;
       const executionTimeHours = executionTime / (1000 * 3600); // converting milliseconds to hours
@@ -133,7 +128,7 @@ function findPrimesBetween(a = 0, b = 1000000000, energyLimit) {
         console.log('Delta between limit quota and consumed energy (mWh):', (energyLimit - energyConsumptionmWh).toFixed(3));
         console.log('Program terminated due to exceeded mWh limit quota.');
 
-        httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: 3, hash: scriptHash }, (err) => {
+        httpRequest('PATCH', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/api/v1/task/modify/execution?id=${task_id}`, { status: 3, hash: scriptHash }, (err) => {
           if (err) {
             console.error('Error making API call:', err);
           }
@@ -151,7 +146,7 @@ function findPrimesBetween(a = 0, b = 1000000000, energyLimit) {
 // Main execution logic
 const scriptHash = calculateScriptHash();
 
-httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res, body) => {
+httpRequest('GET', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/api/v1/task?id=${task_id}`, null, (err, res, body) => {
   if (err) {
     console.error('Error making API call:', err);
     process.exit(1);
@@ -161,20 +156,19 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
   if (response.hash !== scriptHash) {
     console.error('Hash mismatch. Terminating program.');
 
-    httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: 4, hash: scriptHash }, (err) => {
+    httpRequest('PATCH', `http://localhost:8086/api/task/execution?id=${task_id}`, { status: 4, hash: scriptHash }, (err) => {
       if (err) {
         console.error('Error making API call:', err);
       }
       process.exit(1);
     });
   } else {
-    httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, { status: 1, hash: scriptHash }, (err) => {
+    httpRequest('PATCH', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/api/v1/task/modify/execution?id=${task_id}`, { status: 1, hash: scriptHash }, (err) => {
       if (err) {
         console.error('Error making API call:', err);
         process.exit(1);
       }
 
-      // Read command line arguments for a and b
       const [,, argA, argB] = process.argv;
       const a = parseInt(argA, 10) || 0;
       const b = parseInt(argB, 10) || (taskEffort === "low" ? 100000000 : taskEffort === "mid" ? 200000000 : taskEffort === "high" ? 500000000 : 100000000);
@@ -184,7 +178,6 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
         process.exit(1);
       }
 
-      // Measure execution time
       const startTime = performance.now();
       const primes = findPrimesBetween(a, b, energyLimit);
       const endTime = performance.now();
@@ -201,7 +194,6 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
       console.log(`Prime numbers between ${a} and ${b}:`, primes);
       console.log('Total execution time (ms):', executionTime.toFixed(3));
 
-      // Final energy consumption estimate
       const executionTimeHours = executionTime / (1000 * 3600); // converting milliseconds to hours
       const energyConsumptionmWh = totalPowerConsumptionmWh * executionTimeHours;
 
@@ -209,7 +201,6 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
       console.log('Energy limit quota (mWh):', energyLimit);
       console.log('Delta between limit quota and consumed energy (mWh):', (energyLimit - energyConsumptionmWh).toFixed(3));
 
-      // Determine final status based on energy consumption
       const finalStatus = energyConsumptionmWh > energyLimit ? 3 : 2;
 
       console.log('Final status:', finalStatus); // Debugging log
@@ -220,7 +211,7 @@ httpRequest('GET', `http://localhost:8086/api/task/${task_id}`, null, (err, res,
         energyConsumed: energyConsumptionmWh.toFixed(3)
       }); // Debugging log
 
-      httpRequest('PATCH', `http://localhost:8086/api/task/execution/${task_id}`, {
+      httpRequest('PATCH', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/api/v1/task/modify/execution?id=${task_id}`, {
         status: finalStatus,
         hash: scriptHash,
         executionTime: parseFloat(executionTimeHours.toFixed(3)),
