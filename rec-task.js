@@ -2,7 +2,7 @@ const { performance, PerformanceObserver } = require('perf_hooks');
 const os = require('os');
 const crypto = require('crypto');
 const fs = require('fs');
-const https = require('https');
+const https = require('https'); // For https calls
 
 // Global variables
 const task_id = "<TASK_ID>";
