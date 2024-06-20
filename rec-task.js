@@ -156,7 +156,7 @@ httpRequest('GET', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/a
   if (response.hash !== scriptHash) {
     console.error('Hash mismatch. Terminating program.');
 
-    httpRequest('PATCH', `http://localhost:8086/api/task/execution?id=${task_id}`, { status: 4, hash: scriptHash }, (err) => {
+    httpRequest('PATCH', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/api/v1/task/modify/execution?id=${task_id}`, { status: 4, hash: scriptHash }, (err) => {
       if (err) {
         console.error('Error making API call:', err);
       }
