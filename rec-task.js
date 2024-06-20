@@ -3,12 +3,13 @@ const os = require('os');
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
+const https = require('https'); // Added https module
 
 // Global variables
-const task_id = "<TASK_ID>";
-const jwt = "<JWT>";
-const energyLimit = "<ENERGY_LIMIT>";
-const taskEffort = "<TASK_EFFORT>"; // Could be low, mid or high
+const task_id = "6674731584f6921863dee780";
+const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoiVVNFUiIsImlkIjoiNjY3NDcyMGZjYzgzMDMzYjYyZmI4NzFmIiwic3ViIjoiY29jaGlAcmVjLml0IiwiaWF0IjoxNzE4OTA3NDI0LCJleHAiOjE3MTg5NDM0MjR9.azLg_TrJN7QXN8Tl6-TndqcqPiqJ1le2FlFcdPPEXdA";
+const energyLimit = "100000";
+const taskEffort = "mid"; // Could be low, mid or high
 
 // Function to calculate the hash of the current script file
 function calculateScriptHash() {
@@ -16,8 +17,11 @@ function calculateScriptHash() {
   return crypto.createHash('sha256').update(scriptContent).digest('hex');
 }
 
-// Function to make an HTTP request with retry mechanism
+// Function to make an HTTP or HTTPS request with retry mechanism
 function httpRequest(method, url, data, callback, retries = 3, delay = 1000) {
+  const isHttps = url.startsWith('https://');
+  const module = isHttps ? https : http;
+
   const options = {
     method: method,
     headers: {
@@ -27,7 +31,7 @@ function httpRequest(method, url, data, callback, retries = 3, delay = 1000) {
     timeout: 5000 // 5 seconds timeout
   };
 
-  const req = http.request(url, options, (res) => {
+  const req = module.request(url, options, (res) => {
     let body = '';
     res.on('data', chunk => {
       body += chunk;
