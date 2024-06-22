@@ -153,6 +153,13 @@ httpRequest('GET', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/a
   }
 
   const response = JSON.parse(body);
+
+  // Check if status is 2 or 3
+  if (response.status === 2 || response.status === 3) {
+    console.error('Task is already completed or finished, cannot be restarted.');
+    process.exit(1);
+  }
+  
   if (response.hash !== scriptHash) {
     console.error('Hash mismatch. Terminating program.');
 
