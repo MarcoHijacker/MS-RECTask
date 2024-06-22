@@ -146,7 +146,7 @@ function findPrimesBetween(a = 0, b = 1000000000, energyLimit) {
 // Main execution logic
 const scriptHash = calculateScriptHash();
 
-httpRequest('GET', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/api/v1/task?id=${task_id}`, null, (err, res, body) => {
+httpRequest('GET', `https://t2f5wgen2d.execute-api.us-east-1.amazonaws.com/dev/api/v1/task/find/by-id?id=${task_id}`, null, (err, res, body) => {
   if (err) {
     console.error('Error making API call:', err);
     process.exit(1);
